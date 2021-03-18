@@ -1,43 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Mouse : MonoBehaviour
 {
-    public float xSensitivity;
-    public float ySensitivity;
-    float xRotation;
-    float yRotation;
-    float multiplier = 0.01f;
+    [SerializeField] private float sensX = 100f;
+    [SerializeField] private float sensY = 100f;
+
+    [SerializeField] Transform cam = null;
+    [SerializeField] Transform orientation = null;
+
     float mouseX;
     float mouseY;
 
-    Transform orientation;
-    Camera cam;
+    float multiplier = 0.01f;
 
-    void Start()
+    float xRotation;
+    float yRotation;
+
+    private void Start()
     {
-
-        cam = GetComponentInChildren<Camera>();
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    void Update()
-    {
-        Look();
-
-        cam.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
-        transform.localRotation = Quaternion.Euler(yRotation, 0, 0);
-    }
-
-    // Mouse Control
-    public void Look()
+    private void Update()
     {
         mouseX = Input.GetAxisRaw("Mouse X");
         mouseY = Input.GetAxisRaw("Mouse Y");
 
-        yRotation += mouseX * xSensitivity * multiplier;
-        xRotation -= mouseY * ySensitivity * multiplier;
+        yRotation += mouseX * sensX * multiplier;
+        xRotation -= mouseY * sensY * multiplier;
 
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
