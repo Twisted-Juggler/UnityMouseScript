@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
@@ -9,6 +11,7 @@ public class Movement : MonoBehaviour
     [SerializeField] bool speed = false;
     [SerializeField] bool lowGravity = false;
     [SerializeField] bool superJump = false;
+    [SerializeField] bool lowFriction = false;
 
 
     [Space(5)]
@@ -19,6 +22,7 @@ public class Movement : MonoBehaviour
     [SerializeField] Transform player;
     [SerializeField] Transform groundCheck;
     [SerializeField] Rigidbody rb;
+    [SerializeField] PhysicMaterial friction;
     [SerializeField] float gravity = 32f;
     [SerializeField] LayerMask collisionLayer;
 
@@ -35,6 +39,7 @@ public class Movement : MonoBehaviour
     [Header("Movement Variables")]
 
     [SerializeField] float distance;
+    [SerializeField] float maxSpeed = 12f;
     [SerializeField] float groundDrag = 6f;
     [SerializeField] float groundMultiplier = 2f;
     [SerializeField] float airDrag = 2f;
@@ -47,19 +52,19 @@ public class Movement : MonoBehaviour
     float horizontalMovement;
     float verticalMovement;
     float groundSphere = 0.4f;
+    float sprintSpeed;
     float x, y;
     bool isGrounded;
 
 
     Vector3 MoveDirection;
     Vector3 slopeMoveDirection;
-    Vector3 velocity;
 
     [Space(5)]
     [Header("Keybinds")]
 
     [SerializeField] KeyCode jumpKey = KeyCode.Space;
-    [SerializeField] KeyCode sprintKey = KeyCode.LeftControl;
+    [SerializeField] KeyCode sprintKey = KeyCode.LeftShift;
 
     RaycastHit slopeHit;
 
@@ -83,44 +88,51 @@ public class Movement : MonoBehaviour
 
     // On Start
     void Start()
-    { 
+    {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
     }
 
 
+    void Update()
+    {
+        DevTools();
+        MoveInput();
+        Gravity();
+        ControlDrag();
+        SpeedControl();
+        Jump();
+
+        //velocity.y += gravity * Time.deltaTime;
+
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundSphere, collisionLayer);
+            
+    }
+
     void FixedUpdate()
     {
+        Move();
+    }
+
+    /*--- Movement ---*/
+
+    void MoveInput()
+    {
+        horizontalMovement = Input.GetAxisRaw("Horizontal");
+        verticalMovement = Input.GetAxisRaw("Vertical");
+    }
+
+    void Move()
+    {
+
+        // This commented code is just the "move direction" that I am not currently using
+
+
         /*Quaternion groundRot = Quaternion.FromToRotation(Vector3.up, GroundNormals(distance, collisionLayer));
         Quaternion cameraDirection = Quaternion.Euler(0, Camera.main.transform.eulerAngles.y, 0);
 
         Vector3 direction = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
         transform.position += groundRot * cameraDirection * direction * playerSpeed * Time.fixedDeltaTime;*/
-
-        
-
-        Move();
-        Gravity();
-        ControlDrag();
-        SpeedControl();
-
-        velocity.y += gravity * Time.deltaTime;
-
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundSphere, collisionLayer);
-
-        if (isGrounded && Input.GetKey(jumpKey))
-        {
-            Jump();
-        }
-            
-    }
-
-    /*--- Movement ---*/
-
-    void Move()
-    {
-        horizontalMovement = Input.GetAxisRaw("Horizontal");
-        verticalMovement = Input.GetAxisRaw("Vertical");
 
         MoveDirection = orientation.forward * verticalMovement + orientation.right * horizontalMovement;
 
@@ -140,8 +152,6 @@ public class Movement : MonoBehaviour
         {
             rb.AddForce(MoveDirection.normalized * speedMultiplier * playerSpeed * airMultiplier, ForceMode.Acceleration);
         }
-
-        
     }
 
     private Vector3 GroundNormals(float distance, LayerMask collisionLayer)
@@ -152,17 +162,21 @@ public class Movement : MonoBehaviour
     }
 
 
+
     void Jump()
     {
-        rb.AddForce(new Vector3(0, 1, 0) * jumpHeight, ForceMode.Impulse);
+        if (isGrounded && Input.GetKey(jumpKey))
+        {
+            rb.AddForce(new Vector3(0, 1, 0) * jumpHeight, ForceMode.Impulse);
+        }
     }
+
 
     void SpeedControl()
     {
         
         
-    }
-
+    } 
 
 
     /*--- Physics ---*/
@@ -193,22 +207,28 @@ public class Movement : MonoBehaviour
             playerSpeed = 100;
         }
 
-        if (flight == true)
+        else if (flight == true)
         {
             rb.useGravity = false;
             gravity = 0f;
             MoveDirection = cam.forward * verticalMovement + cam.right * horizontalMovement;
         }
 
-        if (lowGravity == true)
+        else if (lowGravity == true)
         {
             gravity = 9;
             jumpHeight = 80;
         }
 
-        if (superJump == true)
+        else if (superJump == true)
         {
             jumpHeight = 200;
+        }
+
+        else if (lowFriction == true)
+        {
+            airDrag = 0f;
+            groundDrag = 0f;
         }
     }
 }
