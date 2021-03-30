@@ -1,14 +1,22 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Mouse : MonoBehaviour
 {
-    [SerializeField] private float sensX = 100f;
-    [SerializeField] private float sensY = 100f;
+    [SerializeField] float sensX = 100f;
+    [SerializeField] float sensY = 100f;
 
     [SerializeField] Transform cam = null;
     [SerializeField] Transform orientation = null;
+
+    [SerializeField] Vector2 cameraTurnSpeed;
+
+    private float upClampAngle = 60f;
+    private float downClampAngle = -90f;
+    private float CameraTilt = 10f;
+    private float ySmoothRotation;
+    private float xSmoothRotation;
 
     float mouseX;
     float mouseY;
@@ -36,5 +44,29 @@ public class Mouse : MonoBehaviour
 
         cam.transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
         orientation.transform.rotation = Quaternion.Euler(0, yRotation, 0);
+
+        CalcRotation();
+        SmoothRotation();
+        ApplyRotation();
+    }
+
+    void CalcRotation()
+    {
+        yRotation += mouseX * sensX * multiplier;
+        xRotation -= mouseY * sensY * multiplier;
+
+        xRotation = Mathf.Clamp(xRotation, -upClampAngle, downClampAngle);
+    }
+
+    void SmoothRotation()
+    {
+        ySmoothRotation = Mathf.Lerp(ySmoothRotation, yRotation, cameraTurnSpeed.y * Time.smoothDeltaTime);
+        xSmoothRotation = Mathf.Lerp(xSmoothRotation, xRotation, cameraTurnSpeed.x * Time.smoothDeltaTime);
+    }
+
+    void ApplyRotation()
+    {
+        cam.localRotation = Quaternion.Euler(xSmoothRotation, ySmoothRotation - (CameraTilt * 0.5f), CameraTilt);
+        orientation.transform.rotation = Quaternion.Euler(0, ySmoothRotation - (CameraTilt * 0.5f), 0);
     }
 }
